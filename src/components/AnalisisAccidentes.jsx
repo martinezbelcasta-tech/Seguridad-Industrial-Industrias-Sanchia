@@ -256,10 +256,9 @@ function AnalisisAccidentes({ onGuardarAnalisis }) {
                 onChange={handleChange}
               >
                 <option value="">Seleccionar</option>
-                <option value="Matutino">Matutino (6am - 2pm)</option>
-                <option value="Vespertino">Vespertino (2pm - 10pm)</option>
-                <option value="Nocturno">Nocturno (10pm - 6am)</option>
-                <option value="Mixto">Mixto</option>
+                <option value="7am a 4pm">de 7am a 4pm</option>
+                <option value="6am a 5pm">de 6am a 5pm</option>
+                <option value="5pm a 6am">de 5pm a 6am</option>
               </select>
             </div>
           </div>
