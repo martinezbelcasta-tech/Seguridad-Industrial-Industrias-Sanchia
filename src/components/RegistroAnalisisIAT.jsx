@@ -9,6 +9,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 function RegistroAnalisisIAT({ lista = [], onActualizar }) {
   const [expediente, setExpediente] = useState(null);
   const [registros, setRegistros] = useState(lista);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     setRegistros(lista);
@@ -403,7 +404,19 @@ const calcularGrafico = () => {
         <h1>Registros de Analisis IAT</h1>
         <p>Historico de analisis de accidentes - Industrias Sanchia</p>
       </div>
-<div className="registro-content">
+      <div className="registro-content">
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="Buscar por nombre, DUI, area o cualquier dato..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button className="btn-clear-search" onClick={() => setSearchTerm('')}>X</button>
+          )}
+        </div>
         {registros.length === 0 ? (
           <p className="mensaje-vacio">No hay analisis registrados aun.</p>
         ) : (
@@ -417,7 +430,15 @@ const calcularGrafico = () => {
               </tr>
             </thead>
             <tbody>
-              {registros.map((registro, index) => (
+              {registros.filter(r =>
+                !searchTerm ||
+                (r.nombre_completo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (r.numero_dui || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (r.lugar_exacto || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (r.cargo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (r.jefe_inmediato || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (r.fecha_accidente || '').includes(searchTerm)
+              ).map((registro, index) => (
                 <tr key={index}>
                   <td>{registro.fecha_accidente || '-'}</td>
                   <td>{registro.nombre_completo || '-'}</td>

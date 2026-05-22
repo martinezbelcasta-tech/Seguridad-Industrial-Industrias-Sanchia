@@ -29,6 +29,39 @@
   text-align: center;
 }
 
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  justify-content: flex-end;
+}
+
+.search-input {
+  padding: 10px 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 300px;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.btn-clear-search {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-weight: 700;
+}
+
 .registro-content h2 {
   font-size: 1.8rem;
   font-weight: 700;
