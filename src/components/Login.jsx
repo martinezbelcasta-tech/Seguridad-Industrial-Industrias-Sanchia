@@ -13,6 +13,10 @@ export default function Login() {
     if (savedEmail) setEmail(savedEmail);
   }, []);
 
+  useEffect(() => {
+    if (email) localStorage.setItem('sanchia_email', email);
+  }, [email]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -64,6 +68,7 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)} 
                 placeholder="ejemplo@sanchia.com" 
                 required 
+                autoComplete="email"
               />
             </div>
             
