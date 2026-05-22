@@ -205,6 +205,32 @@
   box-shadow: 0 0 15px rgba(234, 179, 8, 0.1) !important;
 }
 
+.password-wrapper {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.password-wrapper input {
+  padding-right: 100px !important;
+}
+
+.password-toggle {
+  position: absolute !important;
+  right: 10px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #eab308 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  padding: 8px 16px !important;
+}
+
+.password-toggle:hover {
+  color: #fbbf24 !important;
+}
+
 .btn-login {
   background: linear-gradient(to right, #ca8a04, #eab308) !important;
   color: #0f172a !important;
