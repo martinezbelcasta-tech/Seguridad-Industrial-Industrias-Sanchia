@@ -184,9 +184,9 @@ AREA DE VIGILANCIA
 - **Moderado**: Perdida de tiempo, no incapacidad
 - **Grave**: Perdida de vida, incapacidad permanente
 
-## Autores
+## Autor
 
-- **Industrias Sanchia** - Sistema de Gestion de Seguridad Industrial
+Desarrollado por Allan Martinez
 
 ## Version
 
