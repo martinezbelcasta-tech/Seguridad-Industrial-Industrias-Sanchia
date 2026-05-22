@@ -328,7 +328,33 @@
 }
 
 .input-foto {
-  padding: 8px 0;
+  display: none;
+}
+
+.file-upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.file-upload-label:hover {
+  background: linear-gradient(135deg, #2980b9 0%, #2573a7 100%);
+  box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
+  transform: translateY(-1px);
+}
+
+.file-upload-label svg {
+  flex-shrink: 0;
 }
 
 .subiendo-texto {
