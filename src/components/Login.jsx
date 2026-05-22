@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import './Login.css';
 
@@ -8,10 +8,19 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('sanchia_email');
+    if (savedEmail) setEmail(savedEmail);
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError('Credenciales incorrectas. Intenta de nuevo.');
+    if (error) {
+      setError('Credenciales incorrectas. Intenta de nuevo.');
+    } else {
+      localStorage.setItem('sanchia_email', email);
+    }
   };
 
   return (
