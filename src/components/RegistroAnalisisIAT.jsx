@@ -79,10 +79,6 @@ const handlePlanAccionChange = (index, field, value) => {
   };
 
 const handleActualizarRegistro = async () => {
-    if (onActualizar) {
-      onActualizar(expediente);
-    }
-
     const { error } = await supabase
       .from('analisis_iat')
       .update({
@@ -94,8 +90,10 @@ const handleActualizarRegistro = async () => {
 
     if (error) {
       console.error('Error al actualizar en Supabase:', error);
+      return;
     }
 
+    setRegistros(prev => prev.map(r => r.fecha_registro === expediente.fecha_registro ? expediente : r));
     alert('Expediente actualizado con exito!');
     setExpediente(null);
   };
