@@ -1,337 +1,85 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import './RegistroAccidentes.css';
+/* vite-src/components/RegistroAccidentes.jsx */
+import { useState } from 'react';
 
-const areas = [
-  'MANTENIMIENTO',
-  'MAQUINAS',
-  'SEMITERMINADO',
-  'RECICLADO_PELETIZADO',
-  'ENSAMBLE',
-  'MEZCLAS',
-  'BODEGA ELECTRICA',
-  'BODEGA DE INSUMOS',
-  'BODEGA DE EMPAQUES Y SUMINISTROS',
-  'BODEGA CD',
-  'BODEGA MATERIA PRIMA',
-  'CARPINTERIA',
-  'OFICINAS ADMINISTRATIVAS',
-  'TRANSPORTE',
-  'RECURSOS HUMANOS',
-  'AREA DE VIGILANCIA'
+/* Registros.jsx — Historial de Accidentes y Registros IAT */
+
+const MOCK_REG_ACC = [
+  { id:1, fecha:'2026-05-28', empleado:'Carlos Méndez', area:'MAQUINAS', gravedad:'Leve', dias:1, descripcion:'Corte superficial en mano derecha al manipular rebaba sin guantes' },
+  { id:2, fecha:'2026-05-20', empleado:'Luis Peralta', area:'ENSAMBLE', gravedad:'Grave', dias:3, descripcion:'Golpe en rodilla por caída de tarima mal estibada' },
+  { id:3, fecha:'2026-05-14', empleado:'Roberto Castro', area:'MANTENIMIENTO', gravedad:'Leve', dias:0, descripcion:'Irritación ocular por salpicadura de aceite sin gafas de seguridad' },
+];
+
+const MOCK_REG_IAT = [
+  { id:1, fecha:'2026-05-21', empleado:'Luis Peralta', cargo:'Operador de Ensamble', estado:'Completado', causa:'Tarima mal estibada, área desordenada' },
+  { id:2, fecha:'2026-05-29', empleado:'Carlos Méndez', cargo:'Operador de Máquinas', estado:'En proceso', causa:'Falta de EPP — no uso de guantes de corte' },
 ];
 
 function RegistroAccidentes({ lista }) {
-  const [registros, setRegistros] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalAbierto, setModalAbierto] = useState(false);
-  const [accidenteSeleccionado, setAccidenteSeleccionado] = useState(null);
-  const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
-  const [datosEdicion, setDatosEdicion] = useState(null);
-  const [subiendoFoto, setSubiendoFoto] = useState(false);
-  const [nuevaFotoPreview, setNuevaFotoPreview] = useState(null);
-  const [archivoFotoNueva, setArchivoFotoNueva] = useState(null);
-
-  useEffect(() => {
-    obtenerRegistros();
-  }, []);
-
-  const obtenerRegistros = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('accidentes')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (data) {
-      console.log('Datos traidos de Supabase:', data);
-      setRegistros(data);
-    }
-    if (error) {
-      console.error('Error al cargar accidentes:', error);
-    }
-    setLoading(false);
-  };
-
-  const subirFoto = async (file) => {
-    if (!file) return null;
-
-    setSubiendoFoto(true);
-    try {
-      const fileName = `accidentes/${Date.now()}_${file.name}`;
-      const { data, error } = await supabase.storage
-        .from('accidentes_fotos')
-        .upload(fileName, file);
-
-      if (error) {
-        console.error('Error al subir foto:', error);
-        setSubiendoFoto(false);
-        return null;
-      }
-
-      const { data: urlData } = supabase.storage
-        .from('accidentes_fotos')
-        .getPublicUrl(fileName);
-
-      setSubiendoFoto(false);
-      return urlData.publicUrl;
-    } catch (e) {
-      console.error('Error:', e.message);
-      setSubiendoFoto(false);
-      return null;
-    }
-  };
-
-  const handleInputEdicionChange = (e) => {
-    const { name, value } = e.target;
-    setDatosEdicion(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleFotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setArchivoFotoNueva(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNuevaFotoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const eliminarFoto = () => {
-    setDatosEdicion(prev => ({ ...prev, foto_url: null }));
-    setNuevaFotoPreview(null);
-    setArchivoFotoNueva(null);
-  };
-
-  const handleActualizarAccidente = async () => {
-    let fotoUrl = datosEdicion.foto_url;
-
-    if (archivoFotoNueva) {
-      fotoUrl = await subirFoto(archivoFotoNueva);
-    }
-
-    const registroActualizado = {
-      ...datosEdicion,
-      foto_url: fotoUrl
-    };
-
-    const { error } = await supabase
-      .from('accidentes')
-      .update(registroActualizado)
-      .eq('id', datosEdicion.id);
-
-    if (error) {
-      alert(`Error al actualizar: ${error.message}`);
-      console.error('Error al actualizar:', error);
-    } else {
-      setModalEditarAbierto(false);
-      setArchivoFotoNueva(null);
-      setNuevaFotoPreview(null);
-      obtenerRegistros();
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="registro-container">
-        <div className="registro-header">
-          <h1>Registro de Accidentes</h1>
-          <p>Historico de accidentes - Industrias Sanchia</p>
-        </div>
-        <div className="registro-content">
-          <p className="mensaje-vacio">Cargando registros...</p>
-        </div>
-      </div>
-    );
-  }
+  const merged = lista && lista.length ? [...lista, ...MOCK_REG_ACC] : MOCK_REG_ACC;
 
   return (
-    <div className="registro-container">
-      <div className="registro-header">
-        <h1>Registro de Accidentes</h1>
-        <p>Historico de accidentes - Industrias Sanchia</p>
+    <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+
+      {/* KPIs */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
+        {[
+          { label:'Total Registros',   value: merged.length,                                          color:'var(--navy-800)' },
+          { label:'Accidentes Graves', value: merged.filter(a=>a.gravedad==='Grave'||a.gravedad==='Muy Grave').length, color:'var(--red)' },
+          { label:'Días Perdidos Tot.',value: merged.reduce((s,a)=>s+(parseInt(a.dias)||0),0),        color:'var(--amber)' },
+        ].map((k,i) => (
+          <div key={i} className="card" style={{ padding:'18px 20px' }}>
+            <div style={{ fontSize:10.5, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.09em', color:'var(--tx-muted)', marginBottom:8 }}>{k.label}</div>
+            <div style={{ fontSize:36, fontWeight:900, color:k.color, lineHeight:1, letterSpacing:'-0.03em' }}>{k.value}</div>
+          </div>
+        ))}
       </div>
-      <div className="registro-content">
-        {registros.length === 0 ? (
-          <p className="mensaje-vacio">No hay accidentes registrados aun.</p>
-        ) : (
-          <table className="tabla-registros">
+
+      <div className="card">
+        <div className="card-header">
+          <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            Historial Completo de Accidentes
+          </h2>
+          <span style={{ fontSize:12, color:'var(--tx-muted)' }}>{merged.length} registros</span>
+        </div>
+        <div style={{ overflowX:'auto' }}>
+          <table className="tbl">
             <thead>
               <tr>
                 <th>Fecha</th>
+                <th>Empleado</th>
+                <th>Área</th>
+                <th>Descripción</th>
                 <th>Gravedad</th>
-                <th>Nombre</th>
-                <th>Area</th>
-                <th>Descripcion</th>
-                <th>Accion</th>
+                <th style={{ textAlign:'center' }}>Días Perdidos</th>
               </tr>
             </thead>
             <tbody>
-              {registros.map((registro, index) => (
-                <tr key={index}>
-                  <td>{registro.fecha_accidente}</td>
-                  <td>{registro.gravedad}</td>
-                  <td>{registro.empleado_nombre}</td>
-                  <td>{registro.area}</td>
-                  <td>{registro.descripcion_lesion}</td>
+              {merged.map((a,i) => (
+                <tr key={a.id || i}>
+                  <td style={{ whiteSpace:'nowrap', fontSize:12.5 }}>
+                    {a.fecha ? new Date(a.fecha+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) : '—'}
+                  </td>
+                  <td style={{ fontWeight:600 }}>{a.empleado || a.empleado_nombre || '—'}</td>
+                  <td style={{ fontSize:12, color:'var(--tx-muted)' }}>{(a.area||'').replace('_',' ')}</td>
+                  <td style={{ fontSize:12.5, maxWidth:300 }}>{a.descripcion || a.descripcion_lesion || '—'}</td>
                   <td>
-                    <button className="btn-ver" onClick={() => { setAccidenteSeleccionado(registro); setModalAbierto(true); }}>Ver Detalle</button>
-                    <button className="btn-editar" onClick={() => { setDatosEdicion(registro); setModalEditarAbierto(true); setArchivoFotoNueva(null); setNuevaFotoPreview(null); }}>Editar</button>
+                    <span className={`badge ${(a.gravedad==='Grave'||a.gravedad==='Muy Grave') ? 'badge-red' : 'badge-amber'}`}>
+                      {a.gravedad || 'Leve'}
+                    </span>
+                  </td>
+                  <td style={{ textAlign:'center', fontWeight:700, color: (parseInt(a.dias)||0)>0 ? 'var(--red)' : 'var(--tx-muted)' }}>
+                    {a.dias || a.dias_perdidos || 0}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        )}
+        </div>
       </div>
-
-      {modalAbierto && (
-        <div className="modal-overlay" onClick={() => setModalAbierto(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2>Detalles del Accidente</h2>
-
-            <div className="detalle-grid">
-              <div className="detalle-item">
-                <span className="detalle-label">Fecha:</span>
-                <span className="detalle-valor">{accidenteSeleccionado.fecha_accidente}</span>
-              </div>
-              <div className="detalle-item">
-                <span className="detalle-label">Nombre:</span>
-                <span className="detalle-valor">{accidenteSeleccionado.empleado_nombre}</span>
-              </div>
-              <div className="detalle-item">
-                <span className="detalle-label">Area:</span>
-                <span className="detalle-valor">{accidenteSeleccionado.area}</span>
-              </div>
-              <div className="detalle-item">
-                <span className="detalle-label">Gravedad:</span>
-                <span className="detalle-valor">{accidenteSeleccionado.gravedad}</span>
-              </div>
-              <div className="detalle-item">
-                <span className="detalle-label">Causa Raiz:</span>
-                <span className="detalle-valor">{accidenteSeleccionado.causa_raiz || '-'}</span>
-              </div>
-              <div className="detalle-item">
-                <span className="detalle-label">Dias Perdidos:</span>
-                <span className="detalle-valor">{accidenteSeleccionado.dias_perdidos || '0'}</span>
-              </div>
-            </div>
-
-            <div className="detalle-descripcion">
-              <span className="detalle-label">Descripcion:</span>
-              <p className="detalle-valor-descripcion">{accidenteSeleccionado.descripcion_lesion}</p>
-            </div>
-
-            {accidenteSeleccionado.foto_url ? (
-              <img src={accidenteSeleccionado.foto_url} alt="Evidencia" className="modal-foto" />
-            ) : (
-              <p className="sin-foto">Sin evidencia fotografica</p>
-            )}
-
-            <button className="btn-cerrar" onClick={() => setModalAbierto(false)}>Cerrar</button>
-          </div>
-        </div>
-      )}
-
-      {modalEditarAbierto && datosEdicion && (
-        <div className="modal-overlay" onClick={() => setModalEditarAbierto(false)}>
-          <div className="modal-content modal-editar" onClick={e => e.stopPropagation()}>
-            <h2>Editar Accidente</h2>
-
-            <div className="form-grid-edicion">
-              <div className="form-group">
-                <label>Fecha</label>
-                <input type="date" name="fecha_accidente" value={datosEdicion.fecha_accidente || ''} onChange={handleInputEdicionChange} />
-              </div>
-
-              <div className="form-group">
-                <label>Nombre del Accidentado</label>
-                <input type="text" name="empleado_nombre" value={datosEdicion.empleado_nombre || ''} onChange={handleInputEdicionChange} />
-              </div>
-
-              <div className="form-group">
-                <label>Area</label>
-                <select name="area" value={datosEdicion.area || ''} onChange={handleInputEdicionChange}>
-                  <option value="">Seleccione un area</option>
-                  {areas.map(area => (
-                    <option key={area} value={area}>{area}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Gravedad</label>
-                <select name="gravedad" value={datosEdicion.gravedad || ''} onChange={handleInputEdicionChange}>
-                  <option value="">Seleccione gravedad</option>
-                  <option value="Leve">Leve</option>
-                  <option value="Moderado">Moderado</option>
-                  <option value="Grave">Grave</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Dias Perdidos</label>
-                <input type="number" name="dias_perdidos" value={datosEdicion.dias_perdidos || 0} onChange={handleInputEdicionChange} min="0" />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Descripcion de la Lesion</label>
-                <textarea name="descripcion_lesion" value={datosEdicion.descripcion_lesion || ''} onChange={handleInputEdicionChange} rows="3" />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Causa Raiz</label>
-                <textarea name="causa_raiz" value={datosEdicion.causa_raiz || ''} onChange={handleInputEdicionChange} rows="3" />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Evidencia Fotografica</label>
-                <div className="foto-edicion-container">
-                  {(nuevaFotoPreview || datosEdicion.foto_url) ? (
-                    <div className="foto-preview-container">
-                      <img
-                        src={nuevaFotoPreview || datosEdicion.foto_url}
-                        alt="Preview"
-                        className="foto-miniatura"
-                      />
-                      <button
-                        type="button"
-                        className="btn-eliminar-foto"
-                        onClick={eliminarFoto}
-                        title="Eliminar foto"
-                      >
-                        X
-                      </button>
-                    </div>
-                  ) : null}
-                  <label className="file-upload-label">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                      <polyline points="17 8 12 3 7 8"></polyline>
-                      <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    <span>Cambiar foto</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFotoChange}
-                      className="input-foto"
-                    />
-                  </label>
-                  {subiendoFoto && <span className="subiendo-texto">Subiendo foto...</span>}
-                </div>
-              </div>
-            </div>
-
-            <button className="btn-guardar" onClick={handleActualizarAccidente} disabled={subiendoFoto}>
-              {subiendoFoto ? 'Guardando...' : 'Guardar Cambios'}
-            </button>
-            <button className="btn-cerrar" onClick={() => { setModalEditarAbierto(false); setArchivoFotoNueva(null); setNuevaFotoPreview(null); }}>Cancelar</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
