@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
+import { supabaseSeguridad } from './lib/supabaseSeguridadClient';
 import Dashboard from './components/Dashboard';
 import Accidentes from './components/Accidentes';
 import AnalisisAccidentes from './components/AnalisisAccidentes';
@@ -47,6 +48,14 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    supabaseSeguridad.from('analisis_iat').select('*').order('fecha_registro', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) setListaIAT(data);
+      });
+  }, [session]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -136,9 +145,9 @@ function App() {
         <main style={{ flex:1, background:'var(--page-bg)', padding:'22px 24px 48px' }}>
           {view === 'dashboard'           && <Dashboard />}
           {view === 'accidentes'          && <Accidentes onGuardar={a => setListaAcc(p=>[...p,a])} />}
-          {view === 'analisis'            && <AnalisisAccidentes onGuardarAnalisis={a => setListaIAT(p=>[...p,a])} />}
+          {view === 'analisis'            && <AnalisisAccidentes onGuardarAnalisis={a => setListaIAT(p=>[a,...p])} />}
           {view === 'registroAccidentes'  && <RegistroAccidentes lista={listaAcc} />}
-          {view === 'registroAnalisisIAT' && <RegistroAnalisisIAT lista={listaIAT} onActualizar={() => {}} />}
+          {view === 'registroAnalisisIAT' && <RegistroAnalisisIAT lista={listaIAT} onActualizar={a => setListaIAT(p => p.map(r => r.id === a.id ? a : r))} />}
         </main>
       </div>
     </div>
