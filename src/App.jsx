@@ -55,6 +55,10 @@ function App() {
       .then(({ data, error }) => {
         if (!error && data) setListaIAT(data);
       });
+    supabaseSeguridad.from('accidentes').select('*').order('fecha_accidente', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) setListaAcc(data);
+      });
   }, [session]);
 
   const handleLogout = async () => {
@@ -145,9 +149,9 @@ function App() {
         <main style={{ flex:1, background:'var(--page-bg)', padding:'22px 24px 48px' }}>
           {view === 'dashboard'           && <Dashboard />}
           {view === 'accidentes'          && <Accidentes onGuardar={a => setListaAcc(p=>[...p,a])} />}
-          {view === 'analisis'            && <AnalisisAccidentes onGuardarAnalisis={a => setListaIAT(p=>[a,...p])} />}
-          {view === 'registroAccidentes'  && <RegistroAccidentes lista={listaAcc} />}
-          {view === 'registroAnalisisIAT' && <RegistroAnalisisIAT lista={listaIAT} onActualizar={a => setListaIAT(p => p.map(r => r.id === a.id ? a : r))} />}
+          {view === 'analisis'            && <AnalisisAccidentes accidentes={listaAcc} onGuardarAnalisis={a => setListaIAT(p=>[a,...p])} />}
+          {view === 'registroAccidentes'  && <RegistroAccidentes lista={listaAcc} listaIAT={listaIAT} onActualizar={a => setListaAcc(p => p.map(r => r.id === a.id ? a : r))} />}
+          {view === 'registroAnalisisIAT' && <RegistroAnalisisIAT lista={listaIAT} listaAcc={listaAcc} onActualizar={a => setListaIAT(p => p.map(r => r.id === a.id ? a : r))} />}
         </main>
       </div>
     </div>
