@@ -3,7 +3,7 @@
    Reemplaza tu src/index.css con este archivo
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -51,7 +51,7 @@
 
 html, body { height: 100%; }
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'JetBrains Mono', system-ui, -apple-system, sans-serif;
   background: var(--page-bg);
   color: var(--tx-body);
   -webkit-font-smoothing: antialiased;
@@ -67,7 +67,7 @@ body {
 .btn {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 8px 15px; border-radius: var(--r-sm); border: none; cursor: pointer;
-  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+  font-family: 'JetBrains Mono', sans-serif; font-size: 13px; font-weight: 600;
   transition: all 0.15s; white-space: nowrap; line-height: 1;
 }
 .btn svg { width: 15px; height: 15px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; }
@@ -108,7 +108,7 @@ body {
 .field label { font-size: 13px; font-weight: 600; color: var(--tx-heading); }
 .field input, .field select, .field textarea {
   padding: 9px 12px; border: 1px solid var(--card-bd); border-radius: var(--r-sm);
-  font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--tx-body);
+  font-family: 'JetBrains Mono', sans-serif; font-size: 13.5px; color: var(--tx-body);
   background: var(--input-bg); outline: none; transition: border-color .15s, box-shadow .15s; width: 100%;
 }
 .field input:focus, .field select:focus, .field textarea:focus {

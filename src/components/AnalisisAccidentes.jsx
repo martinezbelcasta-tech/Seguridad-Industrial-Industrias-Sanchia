@@ -39,11 +39,13 @@ const columnasTabla = [
   { key: 'status', label: 'Status' }
 ];
 
-function AnalisisAccidentes({ onGuardarAnalisis }) {
+function AnalisisAccidentes({ onGuardarAnalisis, accidentes = [] }) {
   // Estados de diseño y navegación
   const [showForm, setShowForm] = useState(false);
   const [paso, setPaso] = useState(1);
   const [lista, setLista] = useState(MOCK_IAT);
+  const [accidenteSeleccionado, setAccidenteSeleccionado] = useState(null);
+  const [busquedaAcc, setBusquedaAcc] = useState('');
 
   // Estados de datos
   const [formData, setFormData] = useState({
@@ -63,6 +65,8 @@ function AnalisisAccidentes({ onGuardarAnalisis }) {
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [planGuardado, setPlanGuardado] = useState(false);
+  const [toast, setToast] = useState(false);
+  const showToast = () => { setToast(true); setTimeout(() => setToast(false), 1000); };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -103,10 +107,53 @@ function AnalisisAccidentes({ onGuardarAnalisis }) {
     });
   };
 
+  const cerrarForm = () => {
+    setShowForm(false);
+    setAccidenteSeleccionado(null);
+    setBusquedaAcc('');
+  };
+
+  const seleccionarAccidente = (acc) => {
+    setAccidenteSeleccionado(acc);
+    setFormData(prev => ({
+      ...prev,
+      fecha_accidente:       acc.fecha_accidente       || '',
+      nombre_completo:       acc.empleado_nombre        || '',
+      lugar_exacto:          acc.area                   || '',
+      reconstruccion_hechos: acc.descripcion_lesion     || '',
+    }));
+  };
+
+  const accidentesFiltrados = accidentes.filter(a => {
+    if (!busquedaAcc.trim()) return true;
+    const q = busquedaAcc.toLowerCase();
+    return (
+      (a.empleado_nombre || '').toLowerCase().includes(q) ||
+      (a.area            || '').toLowerCase().includes(q) ||
+      (a.fecha_accidente || '').includes(q)
+    );
+  });
+
   const handleGuardarTodo = async (e) => {
     e.preventDefault();
-    setGuardando(true);
     setMensaje(null);
+
+    // ── Validación mínima por paso ──
+    const errores = [];
+    if (!formData.fecha_accidente || !formData.nombre_completo)
+      errores.push('Paso 1: completa al menos la fecha del accidente y el nombre del empleado.');
+    if (!seleccione.PP.length && !seleccione.TC.length && !seleccione.CI.length && !seleccione.CB.length)
+      errores.push('Paso 2: selecciona al menos una causa (PP, TC, CI o CB).');
+    if (!planAccion.length)
+      errores.push('Paso 4: agrega al menos una acción al plan.');
+
+    if (errores.length) {
+      setMensaje({ tipo: 'error', texto: errores.join(' — ') });
+      setTimeout(() => setMensaje(null), 8000);
+      return;
+    }
+
+    setGuardando(true);
 
     let evidenciasUrl = formData.evidencias_fotos;
     if (fotoArchivo) {
@@ -120,6 +167,7 @@ function AnalisisAccidentes({ onGuardarAnalisis }) {
     }
 
     const registroCompleto = {
+      accidente_id: accidenteSeleccionado?.id || null,
       fecha_accidente: formData.fecha_accidente,
       hora_accidente: formData.hora_accidente,
       nombre_completo: formData.nombre_completo,
@@ -176,9 +224,11 @@ function AnalisisAccidentes({ onGuardarAnalisis }) {
       setFotoArchivo(null);
       setPlanGuardado(false);
       setPaso(1);
+      setAccidenteSeleccionado(null);
+      setBusquedaAcc('');
       setShowForm(false);
-      
-      alert('¡Análisis IAT guardado con éxito!');
+
+      showToast();
 
     } catch (e) {
       setMensaje({ tipo: 'error', texto: 'Error: ' + e.message });
@@ -428,8 +478,26 @@ function AnalisisAccidentes({ onGuardarAnalisis }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* ── Toast HECHO ── */}
+      {toast && (
+        <div style={{
+          position:'fixed', top:28, left:'50%', transform:'translateX(-50%)',
+          zIndex:9999, background:'linear-gradient(135deg,#112447 0%,#1b3a6b 100%)',
+          color:'#fff', padding:'14px 36px', borderRadius:16,
+          fontSize:18, fontWeight:900, letterSpacing:'0.06em',
+          display:'flex', alignItems:'center', gap:10,
+          boxShadow:'0 8px 32px rgba(0,0,0,0.28)',
+          animation:'toastPop 0.18s cubic-bezier(0.34,1.56,0.64,1)',
+          pointerEvents:'none',
+        }}>
+          HECHO 🎉
+          <style>{`@keyframes toastPop{from{opacity:0;transform:translateX(-50%) scale(0.7)}to{opacity:1;transform:translateX(-50%) scale(1)}}`}</style>
+        </div>
+      )}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button className="btn btn-primary" onClick={() => setShowForm(p => !p)}>
+        <button className="btn btn-primary" onClick={() => showForm ? cerrarForm() : setShowForm(true)}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
             {showForm ? <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>
               : <><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>}
@@ -439,8 +507,99 @@ function AnalisisAccidentes({ onGuardarAnalisis }) {
         {mensaje && <div className={`msg msg-${mensaje.tipo}`}>{mensaje.texto}</div>}
       </div>
 
-      {showForm && (
+      {/* ── Selector de accidente ── */}
+      {showForm && !accidenteSeleccionado && (
         <div className="card">
+          <div className="card-header">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Seleccionar Accidente para Analizar
+            </h2>
+            <span style={{ fontSize:12, color:'var(--tx-muted)' }}>{accidentes.length} accidente(s) disponible(s)</span>
+          </div>
+          <div className="card-body">
+            {accidentes.length === 0 ? (
+              <div style={{ textAlign:'center', padding:'40px 24px', display:'flex', flexDirection:'column', alignItems:'center', gap:14 }}>
+                <div style={{ width:52, height:52, borderRadius:'50%', background:'#fef2f2', border:'1.5px solid #fca5a5', display:'grid', placeItems:'center' }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" width="24" height="24">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize:15, fontWeight:700, color:'var(--tx-heading)', marginBottom:6 }}>Sin accidentes registrados</div>
+                  <div style={{ fontSize:13, color:'var(--tx-muted)', maxWidth:380 }}>
+                    Primero debe registrar un accidente en el módulo <strong>Accidentes</strong>. El análisis IAT debe estar vinculado a un accidente existente.
+                  </div>
+                </div>
+                <button className="btn btn-outline" onClick={cerrarForm}>Entendido</button>
+              </div>
+            ) : (
+              <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                <input
+                  type="text"
+                  placeholder="Buscar por empleado, área o fecha…"
+                  value={busquedaAcc}
+                  onChange={e => setBusquedaAcc(e.target.value)}
+                  style={{ width:'100%', padding:'9px 13px', fontSize:13, border:'1.5px solid var(--card-bd)', borderRadius:8, fontFamily:'Inter', outline:'none', boxSizing:'border-box' }}
+                />
+                {accidentesFiltrados.length === 0 ? (
+                  <p style={{ fontSize:13, color:'var(--tx-muted)', textAlign:'center', padding:16 }}>Sin resultados.</p>
+                ) : (
+                  <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                    {accidentesFiltrados.map(acc => {
+                      const gravColor = acc.gravedad === 'Muy Grave' ? '#7c2d12' : acc.gravedad === 'Grave' ? '#dc2626' : '#d97706';
+                      const gravBg    = acc.gravedad === 'Muy Grave' ? '#fff7ed' : acc.gravedad === 'Grave' ? '#fef2f2' : '#fffbeb';
+                      return (
+                        <div key={acc.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'13px 16px', border:'1.5px solid var(--card-bd)', borderRadius:10, background:'#fff', transition:'all 0.12s' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor='#c8a84b'; e.currentTarget.style.background='#fefdf7'; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor='var(--card-bd)'; e.currentTarget.style.background='#fff'; }}>
+                          <span style={{ fontSize:10.5, fontWeight:700, padding:'3px 9px', borderRadius:999, background:gravBg, color:gravColor, border:`1px solid ${gravColor}40`, flexShrink:0 }}>
+                            {acc.gravedad || 'Leve'}
+                          </span>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:13.5, fontWeight:700, color:'var(--tx-heading)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                              {acc.empleado_nombre}
+                            </div>
+                            <div style={{ fontSize:12, color:'var(--tx-muted)', marginTop:2 }}>
+                              {acc.fecha_accidente && new Date(acc.fecha_accidente+'T12:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})}
+                              {acc.area && ` · ${acc.area}`}
+                            </div>
+                          </div>
+                          <button type="button" className="btn btn-primary btn-sm" onClick={() => seleccionarAccidente(acc)}
+                            style={{ flexShrink:0, display:'flex', alignItems:'center', gap:5 }}>
+                            Seleccionar
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M5 12h14M12 19l7-7-7-7"/></svg>
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Wizard IAT (solo cuando hay accidente seleccionado) ── */}
+      {showForm && accidenteSeleccionado && (
+        <div className="card">
+          {/* Banner accidente vinculado */}
+          <div style={{ padding:'10px 20px', background:'linear-gradient(135deg,#fefdf7 0%,#fffef0 100%)', borderBottom:'1px solid #f0e8c0', display:'flex', alignItems:'center', gap:12 }}>
+            <div style={{ width:28, height:28, borderRadius:6, background:'#c8a84b', display:'grid', placeItems:'center', flexShrink:0 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:10.5, color:'#92732d', fontWeight:700, letterSpacing:'0.07em', textTransform:'uppercase' }}>Accidente Vinculado</div>
+              <div style={{ fontSize:13, fontWeight:600, color:'var(--tx-heading)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {accidenteSeleccionado.empleado_nombre} · {accidenteSeleccionado.fecha_accidente} · {accidenteSeleccionado.area}
+              </div>
+            </div>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setAccidenteSeleccionado(null); setBusquedaAcc(''); }}>
+              Cambiar
+            </button>
+          </div>
+
           <div className="card-header">
             <h2>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M3 3v18h18" /><path d="m7 16 4-4 4 4 4-4" /></svg>
@@ -519,45 +678,109 @@ function AnalisisAccidentes({ onGuardarAnalisis }) {
         </div>
       )}
 
-      <div className="card">
-        <div className="card-header">
-          <h2>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M3 3v18h18" /><path d="m7 16 4-4 4 4 4-4" /></svg>
-            Registros de Análisis IAT
-          </h2>
-          <span style={{ fontSize: 12, color: 'var(--tx-muted)' }}>{lista.length} análisis</span>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Empleado</th>
-                <th>Cargo</th>
-                <th>Lugar</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lista.map(r => (
-                <tr key={r.id}>
-                  <td style={{ whiteSpace: 'nowrap', fontSize: 12.5 }}>
-                    {r.fecha_accidente ? new Date(r.fecha_accidente + 'T12:00:00').toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                  </td>
-                  <td style={{ fontWeight: 600 }}>{r.nombre_completo || '—'}</td>
-                  <td style={{ fontSize: 12.5, color: 'var(--tx-muted)' }}>{r.cargo || '—'}</td>
-                  <td style={{ fontSize: 12.5, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.lugar_exacto || '—'}</td>
-                  <td>
-                    <span className={`badge ${r.estado === 'Completado' ? 'badge-green' : 'badge-amber'}`}>
-                      {r.estado || 'En proceso'}
+      {/* ── Panel KPIs IAT ── */}
+      {(() => {
+        const total       = lista.length;
+        const completados = lista.filter(r => r.estado === 'Completado').length;
+        const enProceso   = total - completados;
+        const pctCompleto = total > 0 ? Math.round((completados / total) * 100) : 0;
+
+        // Causa más frecuente entre CI y CB
+        const frecuencia = {};
+        lista.forEach(r => {
+          const sels = r.selections || r.selecciones || {};
+          [...(sels.CI || []), ...(sels.CB || [])].forEach(c => {
+            frecuencia[c] = (frecuencia[c] || 0) + 1;
+          });
+        });
+        const causaTop = Object.entries(frecuencia).sort((a,b) => b[1]-a[1])[0];
+
+        // Promedio días hasta cierre (fecha_accidente → fecha_registro)
+        const cerrados = lista.filter(r => r.estado === 'Completado' && r.fecha_accidente && r.fecha_registro);
+        const promDias = cerrados.length > 0
+          ? Math.round(cerrados.reduce((s, r) => {
+              const diff = new Date(r.fecha_registro) - new Date(r.fecha_accidente + 'T00:00:00');
+              return s + diff / 86400000;
+            }, 0) / cerrados.length)
+          : null;
+
+        const kpis = [
+          {
+            icon: <><path d="M3 3v18h18"/><path d="m7 16 4-4 4 4 4-4"/></>,
+            label: 'Total Análisis IAT',
+            value: total,
+            sub: total === 0 ? 'Sin registros aún' : `${total} análisis registrados`,
+            color: '#112447',
+            bg: '#eff6ff',
+            border: '#bfdbfe',
+          },
+          {
+            icon: <><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
+            label: 'Estado de Análisis',
+            value: `${completados} / ${total}`,
+            sub: enProceso > 0 ? `${enProceso} en proceso` : 'Todos completados',
+            color: pctCompleto === 100 ? '#16a34a' : pctCompleto >= 50 ? '#d97706' : '#dc2626',
+            bg: pctCompleto === 100 ? '#f0fdf4' : pctCompleto >= 50 ? '#fffbeb' : '#fef2f2',
+            border: pctCompleto === 100 ? '#86efac' : pctCompleto >= 50 ? '#fde68a' : '#fca5a5',
+            extra: total > 0 ? (
+              <div style={{ marginTop:8 }}>
+                <div style={{ height:6, background:'#e2e8f0', borderRadius:99, overflow:'hidden' }}>
+                  <div style={{ height:'100%', width:`${pctCompleto}%`, background: pctCompleto===100?'#16a34a':pctCompleto>=50?'#d97706':'#dc2626', borderRadius:99, transition:'width 0.6s ease' }}/>
+                </div>
+                <div style={{ fontSize:11, color:'var(--tx-muted)', marginTop:4 }}>{pctCompleto}% completado</div>
+              </div>
+            ) : null,
+          },
+          {
+            icon: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+            label: 'Causa Más Frecuente',
+            value: causaTop ? causaTop[1] : '—',
+            valueSuffix: causaTop ? ' vez(es)' : '',
+            sub: causaTop ? causaTop[0] : 'Sin datos suficientes',
+            color: '#7c3aed',
+            bg: '#faf5ff',
+            border: '#d8b4fe',
+          },
+          {
+            icon: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+            label: 'Promedio Días al Cierre',
+            value: promDias !== null ? promDias : '—',
+            valueSuffix: promDias !== null ? ' días' : '',
+            sub: cerrados.length > 0 ? `Basado en ${cerrados.length} análisis cerrado(s)` : 'Sin análisis cerrados aún',
+            color: promDias === null ? '#64748b' : promDias <= 7 ? '#16a34a' : promDias <= 15 ? '#d97706' : '#dc2626',
+            bg: promDias === null ? '#f8fafc' : promDias <= 7 ? '#f0fdf4' : promDias <= 15 ? '#fffbeb' : '#fef2f2',
+            border: promDias === null ? '#e2e8f0' : promDias <= 7 ? '#86efac' : promDias <= 15 ? '#fde68a' : '#fca5a5',
+          },
+        ];
+
+        return (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12 }}>
+            {kpis.map((k, i) => (
+              <div key={i} className="card" style={{ background: k.bg, border:`1.5px solid ${k.border}`, overflow:'hidden', position:'relative' }}>
+                <div style={{ position:'absolute', top:0, right:0, width:80, height:80, background:`${k.color}08`, borderRadius:'0 0 0 80px', pointerEvents:'none' }}/>
+                <div style={{ padding:'18px 20px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+                    <div style={{ width:32, height:32, borderRadius:8, background: k.color, display:'grid', placeItems:'center', flexShrink:0 }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="16" height="16">{k.icon}</svg>
+                    </div>
+                    <span style={{ fontSize:11, fontWeight:700, letterSpacing:'0.07em', textTransform:'uppercase', color:'var(--tx-muted)', lineHeight:1.3 }}>
+                      {k.label}
                     </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  </div>
+                  <div style={{ fontSize: typeof k.value === 'string' && k.value.length > 5 ? 28 : 38, fontWeight:900, color: k.color, lineHeight:1, letterSpacing:'-0.03em' }}>
+                    {k.value}
+                    {k.valueSuffix && <span style={{ fontSize:14, fontWeight:600, marginLeft:3 }}>{k.valueSuffix}</span>}
+                  </div>
+                  <div style={{ fontSize:12, color:'var(--tx-muted)', marginTop:6, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {k.sub}
+                  </div>
+                  {k.extra || null}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }
